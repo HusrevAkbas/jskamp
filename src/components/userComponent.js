@@ -1,7 +1,7 @@
-import { BaseLogger, ElasticLogger, MongoLogger } from "../crossCuttingConcerns/logger.js"
-import Customer from "../models/customer.js"
-import User from "../models/user.js"
+import Customer from "../models/users/customer.js"
+import User from "../models/users/user.js"
 import UserService from "../services/userService.js"
+import { MongoLogger } from "../crossCuttingConcerns/logger.js"
 
 let userService = new UserService(new MongoLogger())
 

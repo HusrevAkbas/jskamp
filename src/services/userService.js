@@ -1,5 +1,7 @@
 import { users } from "../data/users.js"
-import DataError from "../models/dataError.js"
+import DataError from "../models/errors/dataError.js"
+import CustomerValidator from "../validators/users/customerValidator.js"
+import EmployeeValidator from "../validators/users/employeeValidator.js"
 
 export default class UserService {
 
@@ -8,18 +10,20 @@ export default class UserService {
         this.customers = []
         this.errors = []
         this.loggerService = loggerService
+        this.customerValidator = new CustomerValidator()
+        this.employeeValidator = new EmployeeValidator()
     }
 
     load(){
         for (const user of users) {
             switch (user.type) {
                 case "customer":
-                    if(this.checkCustomerValidity(user)){                        
+                    if(this.customerValidator.isCustomerValid(user)){                        
                         this.customers.push(user)
                     }
                     break;
                 case "employee":
-                    if(this.checkEmployeeValidity(user)){                        
+                    if(this.employeeValidator.isEmployeeValid(user)){
                         this.employees.push(user)
                     }
                     break;
@@ -28,51 +32,21 @@ export default class UserService {
                     this.errors.push(new DataError("Wrong data type", user))
                     break;
             }
+            this.errors.push(...this.customerValidator.errors)
+            this.errors.push(...this.employeeValidator.errors)
         }
-    }
-
-    checkCustomerValidity(user) {
-        let requiredFields = "id firstName lastName age city creditCardNumber".split(" ")
-        let isValid = true
-        for (const field of requiredFields) {
-            if(!user[field]) {
-                isValid = false
-                this.errors.push(new DataError(`missing field. ${field} is required`, user))
-            }
-        }
-        if(Number.isNaN(Number.parseInt(+user.age))){
-            isValid = false
-            this.errors.push(new DataError(`field error. ${user.age} must be a valid number`, user))
-        }
-        return isValid
-    }
-    
-    checkEmployeeValidity(user) {
-        let requiredFields = "id firstName lastName age city salary".split(" ")
-        let isValid = true
-        for (const field of requiredFields) {
-            if(!user[field]) {
-                isValid = false
-                this.errors.push(new DataError(`missing field. ${field} is required`, user))
-            }
-        }
-        if(Number.isNaN(Number.parseInt(+user.age))){
-            isValid = false
-            this.errors.push(new DataError(`field error. ${user.age} must be a valid number`, user))
-        }
-        return isValid
     }
 
     add(user){
         switch (user.type) {
             case "customer":
-                if(this.checkCustomerValidity(user)){                        
+                if(this.customerValidator.isCustomerValid(user)){                        
                     this.customers.push(user)
                 }
                 break;
 
             case "employee":
-                if(this.checkEmployeeValidity(user)){
+                if(this.employeeValidator.isEmployeeValid(user)){
                     this.employees.push(user)
                 }
                 break;
@@ -96,9 +70,9 @@ export default class UserService {
 
     getCustomersSortedByAge() {
         return this.customers.sort((a,b)=> {
-            if(a.firstName < b.firstName){
+            if(a.age < b.age){
                 return -1
-            } else if (a.firstName === b.firstName) {
+            } else if (a.age === b.age) {
                 return 0
             } else {
                 return 1
